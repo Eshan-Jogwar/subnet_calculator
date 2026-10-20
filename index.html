@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IPv4 Subnet Calculator</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="header">
+      <div class="logo-area">
+        <div class="logo-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+            <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+            <line x1="6" y1="6" x2="6.01" y2="6"></line>
+            <line x1="6" y1="18" x2="6.01" y2="18"></line>
+          </svg>
+        </div>
+        <div>
+          <h1>Subnet Calculator</h1>
+          <p class="subtitle">Fast, interactive IPv4 network & CIDR calculator</p>
+        </div>
+      </div>
+      <button id="themeToggleBtn" class="btn-icon" title="Toggle theme" aria-label="Toggle theme">
+        <svg id="sunIcon" class="theme-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line>
+          <line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+        <svg id="moonIcon" class="theme-icon hidden" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+      </button>
+    </header>
+
+    <!-- Quick Presets -->
+    <div class="presets-row">
+      <span class="preset-label">Presets:</span>
+      <button class="preset-chip" data-ip="192.168.1.1" data-cidr="24">192.168.1.1/24 (Home LAN)</button>
+      <button class="preset-chip" data-ip="10.0.0.1" data-cidr="8">10.0.0.1/8 (Large Corp)</button>
+      <button class="preset-chip" data-ip="172.16.0.1" data-cidr="16">172.16.0.1/16 (VPC)</button>
+      <button class="preset-chip" data-ip="192.168.10.15" data-cidr="28">192.168.10.15/28 (/28 Subnet)</button>
+      <button class="preset-chip" data-ip="10.0.0.1" data-cidr="30">10.0.0.1/30 (Point-to-Point)</button>
+    </div>
+
+    <!-- Input Card -->
+    <section class="card input-card">
+      <div class="input-grid">
+        <div class="form-group">
+          <label for="ipInput">IP Address</label>
+          <div class="input-wrapper">
+            <input 
+              type="text" 
+              id="ipInput" 
+              placeholder="e.g. 192.168.1.1 or 192.168.1.1/24" 
+              value="192.168.1.1" 
+              autocomplete="off" 
+              spellcheck="false"
+            />
+            <button id="clearIpBtn" class="clear-btn" title="Clear input">&times;</button>
+          </div>
+          <small class="helper-text">You can also paste IP with CIDR directly (e.g. 10.0.0.1/24)</small>
+        </div>
+
+        <div class="form-group">
+          <label for="maskSelect">Subnet Mask / Prefix</label>
+          <div class="select-wrapper">
+            <select id="maskSelect"></select>
+          </div>
+          <small class="helper-text">Select CIDR prefix or subnet mask</small>
+        </div>
+      </div>
+
+      <!-- Slider for quick prefix adjustment -->
+      <div class="slider-group">
+        <div class="slider-header">
+          <span>CIDR Prefix Length:</span>
+          <span class="cidr-badge" id="cidrBadge">/24</span>
+        </div>
+        <input type="range" id="cidrSlider" min="0" max="32" value="24" class="slider" />
+        <div class="slider-ticks">
+          <span>/0</span>
+          <span>/8</span>
+          <span>/16</span>
+          <span>/24</span>
+          <span>/32</span>
+        </div>
+      </div>
+
+      <!-- Error feedback -->
+      <div id="errorMessage" class="error-banner hidden">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+        <span id="errorText">Invalid IPv4 address format.</span>
+      </div>
+    </section>
+
+    <!-- Results Section -->
+    <main id="resultsSection" class="results-container">
+      <!-- High-level Metric Cards -->
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-label">Usable Hosts</div>
+          <div class="metric-value highlight" id="mUsableHosts">254</div>
+          <div class="metric-sub" id="mUsableSub">Addresses assignable to devices</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Total Addresses</div>
+          <div class="metric-value" id="mTotalHosts">256</div>
+          <div class="metric-sub" id="mTotalSub">Including network & broadcast</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Network Address</div>
+          <div class="metric-value font-mono" id="mNetwork">192.168.1.0</div>
+          <div class="metric-sub" id="mNetworkSub">Subnet ID</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Broadcast Address</div>
+          <div class="metric-value font-mono" id="mBroadcast">192.168.1.255</div>
+          <div class="metric-sub" id="mBroadcastSub">Subnet broadcast</div>
+        </div>
+      </div>
+
+      <!-- Detailed Breakdown Table -->
+      <section class="card">
+        <h2 class="card-title">Detailed Subnet Specification</h2>
+        <div class="table-responsive">
+          <table class="details-table">
+            <tbody>
+              <tr>
+                <td class="col-label">IP Address</td>
+                <td class="col-value"><span class="code-val" id="resIp">192.168.1.1</span></td>
+                <td class="col-action"><button class="copy-btn" data-target="resIp" title="Copy">Copy</button></td>
+              </tr>
+              <tr>
+                <td class="col-label">Network Address</td>
+                <td class="col-value"><span class="code-val" id="resNetwork">192.168.1.0</span></td>
+                <td class="col-action"><button class="copy-btn" data-target="resNetwork" title="Copy">Copy</button></td>
+              </tr>
+              <tr>
+                <td class="col-label">Subnet Mask</td>
+                <td class="col-value"><span class="code-val" id="resMask">255.255.255.0</span></td>
+                <td class="col-action"><button class="copy-btn" data-target="resMask" title="Copy">Copy</button></td>
+              </tr>
+              <tr>
+                <td class="col-label">Wildcard Mask</td>
+                <td class="col-value"><span class="code-val" id="resWildcard">0.0.0.255</span></td>
+                <td class="col-action"><button class="copy-btn" data-target="resWildcard" title="Copy">Copy</button></td>
+              </tr>
+              <tr>
+                <td class="col-label">CIDR Notation</td>
+                <td class="col-value"><span class="code-val" id="resCidr">192.168.1.0/24</span></td>
+                <td class="col-action"><button class="copy-btn" data-target="resCidr" title="Copy">Copy</button></td>
+              </tr>
+              <tr>
+                <td class="col-label">Usable Host Range</td>
+                <td class="col-value"><span class="code-val" id="resUsableRange">192.168.1.1 - 192.168.1.254</span></td>
+                <td class="col-action"><button class="copy-btn" data-target="resUsableRange" title="Copy">Copy</button></td>
+              </tr>
+              <tr>
+                <td class="col-label">First Usable Host</td>
+                <td class="col-value"><span class="code-val" id="resFirstHost">192.168.1.1</span></td>
+                <td class="col-action"><button class="copy-btn" data-target="resFirstHost" title="Copy">Copy</button></td>
+              </tr>
+              <tr>
+                <td class="col-label">Last Usable Host</td>
+                <td class="col-value"><span class="code-val" id="resLastHost">192.168.1.254</span></td>
+                <td class="col-action"><button class="copy-btn" data-target="resLastHost" title="Copy">Copy</button></td>
+              </tr>
+              <tr>
+                <td class="col-label">Broadcast Address</td>
+                <td class="col-value"><span class="code-val" id="resBroadcast">192.168.1.255</span></td>
+                <td class="col-action"><button class="copy-btn" data-target="resBroadcast" title="Copy">Copy</button></td>
+              </tr>
+              <tr>
+                <td class="col-label">IP Type / Scope</td>
+                <td class="col-value" id="resScope"><span class="tag tag-private">Private (RFC 1918)</span></td>
+                <td class="col-action"></td>
+              </tr>
+              <tr>
+                <td class="col-label">IP Class</td>
+                <td class="col-value" id="resClass"><span class="tag tag-class">Class C</span></td>
+                <td class="col-action"></td>
+              </tr>
+              <tr>
+                <td class="col-label">Hex Representation</td>
+                <td class="col-value"><span class="code-val" id="resHex">0xC0A80101</span></td>
+                <td class="col-action"><button class="copy-btn" data-target="resHex" title="Copy">Copy</button></td>
+              </tr>
+              <tr>
+                <td class="col-label">Reverse DNS (PTR)</td>
+                <td class="col-value"><span class="code-val" id="resPtr">1.1.168.192.in-addr.arpa</span></td>
+                <td class="col-action"><button class="copy-btn" data-target="resPtr" title="Copy">Copy</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Binary Visualization Card -->
+      <section class="card">
+        <div class="card-header-flex">
+          <h2 class="card-title">Binary Representation</h2>
+          <div class="binary-legend">
+            <span class="legend-item"><span class="legend-swatch net-swatch"></span> Network Bits</span>
+            <span class="legend-item"><span class="legend-swatch host-swatch"></span> Host Bits</span>
+          </div>
+        </div>
+
+        <div class="binary-display-group">
+          <div class="binary-row">
+            <div class="binary-label">IP Address:</div>
+            <div class="binary-value font-mono" id="binIp"></div>
+          </div>
+          <div class="binary-row">
+            <div class="binary-label">Subnet Mask:</div>
+            <div class="binary-value font-mono" id="binMask"></div>
+          </div>
+          <div class="binary-row">
+            <div class="binary-label">Network Addr:</div>
+            <div class="binary-value font-mono" id="binNet"></div>
+          </div>
+          <div class="binary-row">
+            <div class="binary-label">Broadcast Addr:</div>
+            <div class="binary-value font-mono" id="binBcast"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Subnet Explorer / Subdivider -->
+      <section class="card">
+        <div class="card-header-flex">
+          <div>
+            <h2 class="card-title">Subnet Subdivider</h2>
+            <p class="card-subtitle">Split current network into smaller subnets</p>
+          </div>
+          <div class="subdivide-control">
+            <label for="subdivideSelect">Subdivide into:</label>
+            <select id="subdivideSelect"></select>
+          </div>
+        </div>
+        <div id="subdivideTableContainer" class="table-responsive mt-3">
+          <!-- Dynamically generated table -->
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <p>Clean IPv4 Subnet Calculator &bull; Pure HTML, CSS & JavaScript</p>
+    </footer>
+  </div>
+
+  <div id="toast" class="toast">Copied to clipboard!</div>
+  <script src="script.js"></script>
+</body>
+</html>
